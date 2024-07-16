@@ -57,14 +57,16 @@ const start = async function (mode) {
     canvas.width = bufferLength;
     canvas.height = window.innerHeight;
     const ctx = canvas.getContext("2d");
+    ctx.imageSmoothingEnabled = false;
+    ctx.mozImageSmoothingEnabled = false;
+    ctx.webkitImageSmoothingEnabled = false;
+    ctx.msImageSmoothingEnabled = false;
+
 
     console.log("data array len: " + dataArray.length)
     console.log("canvas width: " + canvas.width)
     console.log("canvas height: " + canvas.height)
-    //const barwidth = barWidth.value;
-    //console.log("barwidth:" + barwidth)
 
-    ctx.imageSmoothingEnabled = false;
 
     let image = ctx.createImageData(canvas.width, canvas.height / 2)
     const bytewidth = 4 * image.width;
@@ -73,13 +75,16 @@ const start = async function (mode) {
     let x = 0;
 
     function animate() {
+      console.log(ctx.imageSmoothingEnabled)
       x = 0;
       ctx.clearRect(0, 0, canvas.width, canvas.height / 2);
 
       analyser.getByteFrequencyData(dataArray);
       for (let i = 0; i < bufferLength; i++) {
         let barHeight = dataArray[i];
-        ctx.fillStyle = "white";
+        const color = heatColors(barHeight)
+        ctx.fillStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]}, ${color[3]})`;
+
         ctx.fillRect(x, canvas.height / 2, parseInt(barWidth.value), -barHeight);
         x += parseInt(barWidth.value);
       }
@@ -87,9 +92,6 @@ const start = async function (mode) {
       //Move the bitmap one bit below
       for (let i = image.data.length - 1; i >= bytewidth; i--) {
         image.data[i] = image.data[i - bytewidth];
-      }
-      for(let i=0; i<4*image.width; i++) {
-        image.data[i] = 0;
       }
       //Set new color row
 
@@ -103,11 +105,6 @@ const start = async function (mode) {
         }
         j++
       }
-
-
-
-
-
       //Move the bitmap one bit below
       for (let i = image.data.length - 1; i >= bytewidth; i--) {
         image.data[i] = image.data[i - bytewidth];
@@ -221,9 +218,9 @@ const heatColors = function(i){
     <button @click="start">Upload</button>
     <button @click="start('sample')">Try sample</button>
     <input type="range" v-model="barWidth" min="1" max="5" />
-    {{barWidth}}
+    <label>{{barWidth}}</label>
     <input type="checkbox" v-model="hd"/>
-    High fftSize: {{hd}}
+    <label>High fftSize: {{hd}}</label>
   </div>
   <div id="container">
     <canvas id="canvas"></canvas>
@@ -241,8 +238,12 @@ const heatColors = function(i){
     background-color: #000
   }
   .input{
-    min-width: 5vw;
-    min-height: 5vh;
-    font-size: 3vh;
+    font-size: 10px;
+    padding:0;
+    font-family: sans-serif;
   }
+  input{
+    margin: 0 0 0 30px
+  }
+
 </style>
