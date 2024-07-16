@@ -1,5 +1,7 @@
 <script setup>
+import {ref} from 'vue'
 
+const barWidth = ref(1)
 
 const start = async function (mode) {
   let file
@@ -7,13 +9,13 @@ const start = async function (mode) {
     file = await fetch('/public/rdr.mp3')
       .then(response => {
         if (!response.ok) {
+          console.log("error")
           throw new Error('Network response was not ok');
         }
         return response.blob();
       })
   } else {
     file = document.getElementById('input').files[0];
-    console.log(file)
   }
   if (!file) {
     console.log('Please upload a file');
@@ -21,7 +23,6 @@ const start = async function (mode) {
   }
   const reader = new FileReader();
 
-  console.log(file)
   reader.readAsArrayBuffer(file);
 
   reader.onload = function (event) {
@@ -36,17 +37,31 @@ const start = async function (mode) {
 
     let audioSource = audioCtx.createMediaElementSource(audio);
     analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 2048;
+    analyser.smoothingTimeConstant = 0;
+
     audioSource.connect(analyser);
     analyser.connect(audioCtx.destination);
 
+
+
+    const bufferLength = analyser.frequencyBinCount
+    const dataArray = new Uint8Array(bufferLength);
+
+
+
+
+
     const canvas = document.getElementById("canvas");
-    canvas.width = window.innerWidth;
+    canvas.width = bufferLength;
     canvas.height = window.innerHeight;
     const ctx = canvas.getContext("2d");
 
-    const bufferLength = analyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-    const barWidth = 1;
+    console.log("data array len: " + dataArray.length)
+    console.log("canvas width: " + canvas.width)
+    console.log("canvas height: " + canvas.height)
+    //const barwidth = barWidth.value;
+    //console.log("barwidth:" + barwidth)
 
     ctx.imageSmoothingEnabled = false;
 
@@ -64,24 +79,44 @@ const start = async function (mode) {
       for (let i = 0; i < bufferLength; i++) {
         let barHeight = dataArray[i];
         ctx.fillStyle = "white";
-        ctx.fillRect(x, canvas.height / 2, barWidth, -barHeight);
-        x += barWidth;
+        ctx.fillRect(x, canvas.height / 2, parseInt(barWidth.value), -barHeight);
+        x += parseInt(barWidth.value);
       }
       let j = 0;
+      //Move the bitmap one bit below
+      for (let i = image.data.length - 1; i >= bytewidth; i--) {
+        image.data[i] = image.data[i - bytewidth];
+      }
+      for(let i=0; i<4*image.width; i++) {
+        image.data[i] = 0;
+      }
       //Set new color row
-      for (let i = 0; i < bytewidth; i += 4) {
+
+      for (let i = 0; i < bytewidth; i+=4*parseInt(barWidth.value)) {
         const colors = heatColors(dataArray[j]);
-        image.data[i + 0] = colors[0];
-        image.data[i + 1] = colors[1];
-        image.data[i + 2] = colors[2];
-        image.data[i + 3] = colors[3];
+        for (let k=0; k<4*parseInt(barWidth.value); k+=4){
+          image.data[i+k] = colors[0];
+          image.data[i+1+k] = colors[1];
+          image.data[i+2+k] = colors[2];
+          image.data[i+3+k] = colors[3];
+        }
         j++
       }
+
+
+
+
+
       //Move the bitmap one bit below
       for (let i = image.data.length - 1; i >= bytewidth; i--) {
         image.data[i] = image.data[i - bytewidth];
       }
       ctx.putImageData(image, 0, canvas.height / 2);
+
+      for(let i = 0; i < 22; i++) {
+        ctx.fillStyle = "rgb(64,64,64,64)";
+        ctx.fillRect(i*1000, 0, 1, canvas.height);
+      }
       requestAnimationFrame(animate);
     }
 
@@ -179,15 +214,17 @@ const heatColors = function(i){
 </script>
 
 <template>
-  <div id="container">
-    <canvas id="canvas"></canvas>
-    <audio id="audio"></audio>
-  </div>
 
   <div class="input">
     <input class="input" type="file" id="input" accept=".mp3, .m4a" />
     <button class="input" @click="start">Upload</button>
     <button class="input" @click="start('sample')">Try sample</button>
+    <input type="range" v-model="barWidth" min="1" max="5" />
+    {{barWidth}}
+  </div>
+  <div id="container">
+    <canvas id="canvas"></canvas>
+    <audio id="audio"></audio>
   </div>
 
 </template>
@@ -196,7 +233,8 @@ const heatColors = function(i){
   canvas{
     top: 0;
     left: 0;
-    width: auto;
+    width: 100%;
+    height: auto;
     background-color: #000
   }
   .input{
