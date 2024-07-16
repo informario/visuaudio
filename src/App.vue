@@ -2,6 +2,7 @@
 import {ref} from 'vue'
 
 const barWidth = ref(1)
+const hd = ref(false)
 
 const start = async function (mode) {
   let file
@@ -37,19 +38,19 @@ const start = async function (mode) {
 
     let audioSource = audioCtx.createMediaElementSource(audio);
     analyser = audioCtx.createAnalyser();
-    analyser.fftSize = 2048;
+    if(hd.value===true){
+      analyser.fftSize = 2048;
+    }
+    else{
+      analyser.fftSize = 512;
+    }
     analyser.smoothingTimeConstant = 0;
 
     audioSource.connect(analyser);
     analyser.connect(audioCtx.destination);
 
-
-
     const bufferLength = analyser.frequencyBinCount
     const dataArray = new Uint8Array(bufferLength);
-
-
-
 
 
     const canvas = document.getElementById("canvas");
@@ -216,11 +217,13 @@ const heatColors = function(i){
 <template>
 
   <div class="input">
-    <input class="input" type="file" id="input" accept=".mp3, .m4a" />
-    <button class="input" @click="start">Upload</button>
-    <button class="input" @click="start('sample')">Try sample</button>
+    <input type="file" id="input" accept=".mp3, .m4a" />
+    <button @click="start">Upload</button>
+    <button @click="start('sample')">Try sample</button>
     <input type="range" v-model="barWidth" min="1" max="5" />
     {{barWidth}}
+    <input type="checkbox" v-model="hd"/>
+    High fftSize: {{hd}}
   </div>
   <div id="container">
     <canvas id="canvas"></canvas>
@@ -234,11 +237,11 @@ const heatColors = function(i){
     top: 0;
     left: 0;
     width: 100%;
-    height: auto;
+    height: 95vh;
     background-color: #000
   }
   .input{
-    min-width: 10vw;
+    min-width: 5vw;
     min-height: 5vh;
     font-size: 3vh;
   }
