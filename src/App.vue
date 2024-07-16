@@ -75,7 +75,6 @@ const start = async function (mode) {
     let x = 0;
 
     function animate() {
-      console.log(ctx.imageSmoothingEnabled)
       x = 0;
       ctx.clearRect(0, 0, canvas.width, canvas.height / 2);
 
