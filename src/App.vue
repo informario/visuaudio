@@ -110,9 +110,10 @@ const start = async function (mode) {
       }
       ctx.putImageData(image, 0, canvas.height / 2);
 
-      for(let i = 0; i < 22; i++) {
-        ctx.fillStyle = "rgb(64,64,64,64)";
-        ctx.fillRect(i*1000, 0, 1, canvas.height);
+      const pixelsPerThousandHz = bufferLength/22
+      for(let i = 0; i < bufferLength; i+=pixelsPerThousandHz) {
+        ctx.fillStyle = "rgb(255,255,255,64)";
+        ctx.fillRect(i, 0, 1, canvas.height);
       }
       requestAnimationFrame(animate);
     }
@@ -211,21 +212,25 @@ const heatColors = function(i){
 </script>
 
 <template>
-
-  <div class="input">
-    <input type="file" id="input" accept=".mp3, .m4a" />
-    <button @click="start">Upload</button>
-    <button @click="start('sample')">Try sample</button>
-    <input type="range" v-model="barWidth" min="1" max="5" />
-    <label>{{barWidth}}</label>
-    <input type="checkbox" v-model="hd"/>
-    <label>High fftSize: {{hd}}</label>
+  <div class="app">
+    <div class="analyzer">
+      <canvas id="canvas"></canvas>
+      <audio id="audio"></audio>
+    </div>
+    <div class="side">
+      <div class="table-cell">
+        <h1>VISUAUDIO!</h1>
+        <marquee>spectrum analyser, graphical visualiser</marquee>
+        <input class="fileinput" type="file" id="input" accept=".mp3, .m4a" />
+        <button @click="start">Upload</button>
+      </div>
+      <input class="slider" type="range" v-model="barWidth" min="1" max="5" />
+      <label>{{barWidth}}</label>
+      <div class="table-cell">
+        <input type="checkbox" v-model="hd">High FFT mode</input>
+      </div>
+    </div>
   </div>
-  <div id="container">
-    <canvas id="canvas"></canvas>
-    <audio id="audio"></audio>
-  </div>
-
 </template>
 
 <style scoped>
@@ -233,16 +238,52 @@ const heatColors = function(i){
     top: 0;
     left: 0;
     width: 100%;
-    height: 95vh;
+    height: 100%;
     background-color: #000
   }
-  .input{
-    font-size: 10px;
-    padding:0;
+  .app{
+    display: flex;
+    flex-direction: row;
+    background-color: #030305;
+    color: aliceblue;
+  }
+  .analyzer{
+    border-style: solid;
+    width: 80vw;
+    height: 97vh;
+  }
+  .side{
+    display: flex;
+    flex-direction: column;
+    border-style: solid;
+    width: 20vw;
+    height: 97vh;
     font-family: sans-serif;
+    text-align: center;
+    justify-content: center;
+   }
+  .table-cell{
+    display : table-cell;
+    vertical-align : middle;
+    text-align : center;
+    justify-content: center;
   }
-  input{
-    margin: 0 0 0 30px
+  .fileinput{
   }
-
+  .slider{
+    margin:0 30%;
+  }
+  @media (max-width: 900px){
+    .app{
+      flex-direction: column-reverse;
+    }
+    .analyzer{
+      width: 100vw;
+      height: 80vh;
+    }
+    .side{
+      width: 100vw;
+      height: 18vh;
+    }
+  }
 </style>
